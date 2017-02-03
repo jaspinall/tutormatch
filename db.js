@@ -46,11 +46,25 @@ sequelize.sync({force: true}).then(() => {
     firstName: 'John',
     lastName: 'Doe',
     email: 'jdoe@gmail.com',
+  }).then(person => {
+    person.createRating({
+      rating: 5,
+    })
+    person.createRating({
+      rating: 4,
+    })
   })
   Tutor.create({
     firstName: 'Jane',
     lastName: 'Smith',
     email: 'jsmith@gmail.com',
+  }).then(person => {
+    person.createRating({
+      rating: 3,
+    })
+    person.createRating({
+      rating: 4,
+    })
   })
 });
 
