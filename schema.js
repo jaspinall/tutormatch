@@ -3,7 +3,8 @@ import {
   GraphQLString,
   GraphQLList,
   GraphQLSchema,
-  GraphQLInt
+  GraphQLInt,
+  GraphQLNonNull
 } from 'graphql';
 
 import Db from './db';
@@ -19,16 +20,28 @@ const Tutor = new GraphQLObjectType({
           return tutor.id;
         }
       },
-      name: {
+      firstName: {
         type: GraphQLString,
         resolve(tutor) {
-          return `${tutor.firstName} ${tutor.lastName}`;
+          return tutor.firstName;
+        }
+      },
+      lastName: {
+        type: GraphQLString,
+        resolve(tutor) {
+          return tutor.lastName;
         }
       },
       email: {
         type: GraphQLString,
         resolve(tutor) {
           return tutor.email;
+        }
+      },
+      ratings: {
+        type: new GraphQLList(Rating),
+        resolve(tutor) {
+          return tutor.getRatings();
         }
       }
     }
@@ -52,12 +65,18 @@ const Rating = new GraphQLObjectType({
           return rating.rating;
         }
       },
-      tutorID: {
+      tutorId: {
         type: GraphQLString,
         resolve(rating) {
           return rating.tutorId;
         }
       },
+      tutor: {
+        type: Tutor,
+        resolve(rating) {
+          return rating.getTutor();
+        }
+      }
     }
   }
 });
@@ -71,7 +90,7 @@ const Query = new GraphQLObjectType({
         type: new GraphQLList(Tutor),
         args: {
           id: {
-            type: GraphQLInt
+            type: GraphQLString
           },
           email: {
             type: GraphQLString
@@ -80,13 +99,61 @@ const Query = new GraphQLObjectType({
         resolve(root, args) {
           return Db.models.tutor.findAll({where: args});
         }
+      },
+      ratings: {
+        type: new GraphQLList(Rating),
+        args: {
+          id: {
+            type: GraphQLString
+          },
+          rating: {
+            type: GraphQLString
+          },
+          tutorId: {
+            type: GraphQLString
+          },
+        },
+        resolve(root, args) {
+          return Db.models.rating.findAll({where: args});
+        }
+      }
+    }
+  }
+});
+
+const Mutation = new GraphQLObjectType({
+  name: 'Mutation',
+  description: 'Functions to create data',
+  fields: () => {
+    return {
+      addTutor: {
+        type: Tutor,
+        args: {
+          firstName: {
+            type: new GraphQLNonNull(GraphQLString),
+          },
+          lastName: {
+            type: new GraphQLNonNull(GraphQLString),
+          },
+          email: {
+            type: new GraphQLNonNull(GraphQLString),
+          },
+        },
+        resolve(_, args) {
+          return Db.models.tutors.create({
+            firstName: args.firstName,
+            lastName: args.lastName,
+            email: args.email,
+          })
+        }
       }
     }
   }
 });
 
 const Schema = new GraphQLSchema({
-  query: Query
+  query: Query,
+  mutation: Mutation
 })
 
 export default Schema;
